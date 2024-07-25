@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Update `quick-xml` to 0.36
+
+## 0.31.3 -- 2024-07-03
+
+- Update `quick-xml` to 0.34
+
+## 0.31.2 -- 2024-05-30
+
+- Use wrapper type implementing `Sync` instead of `static mut`s.
+- Add headerless xml file parsing possibility for `parse` function.
+
 ## 0.31.1 -- 2024-01-29
 
 - Include an `std::convert::Infallible` in hidden `__phantom_lifetime` enum variants,
