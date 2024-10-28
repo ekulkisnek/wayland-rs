@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Update `quick-xml` to 0.37
+
+## 0.31.5 -- 2024-09-04
+
 - Update `quick-xml` to 0.36
 
 ## 0.31.3 -- 2024-07-03
