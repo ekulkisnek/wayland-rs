@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Update `quick-xml` to 0.41
+
 - Update `quick-xml` to 0.37
 - Update `quick-xml` to 0.38
 
