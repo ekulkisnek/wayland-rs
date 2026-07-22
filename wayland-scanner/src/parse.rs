@@ -9,30 +9,11 @@ use quick_xml::{
     Reader,
 };
 
-macro_rules! extract_from(
-    ($it: expr => $pattern: pat => $result: tt) => (
-        match $it.read_event_into(&mut Vec::new()) {
-            Ok($pattern) => { $result },
-            e => panic!("Ill-formed protocol file: {:?}", e)
-        }
-    )
-);
-
-macro_rules! extract_end_tag(
-    ($it: expr => $tag: expr) => (
-        extract_from!($it => Event::End(bytes) => {
-            assert!(bytes.name().into_inner() == $tag.as_bytes(), "Ill-formed protocol file");
-        });
-    )
-);
-
 pub fn parse<S: Read>(stream: S) -> Protocol {
     let mut reader = Reader::from_reader(BufReader::new(stream));
     let reader_config = reader.config_mut();
     reader_config.trim_text(true);
     reader_config.expand_empty_elements = true;
-    // Skip first <?xml ... ?> event
-    let _ = reader.read_event_into(&mut Vec::new());
     parse_protocol(reader)
 }
 
@@ -55,16 +36,19 @@ fn parse_or_panic<T: FromStr>(txt: &[u8]) -> T {
 }
 
 fn parse_protocol<R: BufRead>(mut reader: Reader<R>) -> Protocol {
-    let mut protocol = extract_from!(
-        reader => Event::Start(bytes) => {
-            assert!(bytes.name().into_inner() == b"protocol", "Missing protocol toplevel tag");
-            if let Some(attr) = bytes.attributes().filter_map(|res| res.ok()).find(|attr| attr.key.into_inner() == b"name") {
-                Protocol::new(decode_utf8_or_panic(attr.value.into_owned()))
-            } else {
+    let mut protocol = loop {
+        match reader.read_event_into(&mut Vec::new()) {
+            Ok(Event::Decl(_) | Event::DocType(_) | Event::Comment(_)) => continue,
+            Ok(Event::Start(bytes)) => {
+                assert!(bytes.name().into_inner() == b"protocol", "Missing protocol toplevel tag");
+                if let Some(attr) = bytes.attributes().filter_map(|res| res.ok()).find(|attr| attr.key.into_inner() == b"name") {
+                    break Protocol::new(decode_utf8_or_panic(attr.value.into_owned()));
+                }
                 panic!("Protocol must have a name");
             }
+            e => panic!("Ill-formed protocol file: {:?}", e),
         }
-    );
+    };
 
     loop {
         match reader.read_event_into(&mut Vec::new()) {
